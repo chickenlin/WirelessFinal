@@ -102,7 +102,7 @@ class LoRaBeacon(LoRa):
             print('----------------------------------')
             sleep(1)
             
-            """
+            
             try:
                 rawinput = raw_input(">>> ")
             except NameError:
@@ -112,14 +112,14 @@ class LoRaBeacon(LoRa):
                 sleep(.5)
                 BOARD.teardown()
                 exit()
-            """
+            
+            
+            #number = None
+            #number = str(readNumber())
 
-            number = None
-            number = str(readNumber())
+            if len(rawinput) < 200:
 
-            if len(number) < 200:
-
-                data = {"id":self._id, "data":number}
+                data = {"id":self._id, "data":rawinput}
                 _length, _payload = packer.Pack_Str( json.dumps(data) )
 
                 try:
@@ -155,7 +155,7 @@ class LoRaBeacon(LoRa):
 lora = LoRaBeacon()
 lora.set_mode(MODE.STDBY)
 lora.set_pa_config(pa_select=1)
-
+lora.set_coding_rate(4)
 try:
     lora.start()
 except KeyboardInterrupt:
