@@ -60,7 +60,45 @@ class LoRaRcvCont(LoRa):
         self.set_dio_mapping([0,0,0,0,0,0])    # RX
         self._id = "GW_01"
 
+    def forward_data(self,orgData):
+            targetNode = input("Send to:")
+            
+            data = orgData.split('"')[-2]
+            
+            if len(data) < 200:
+                # t:target d:data
+                data = {"t":targetNode,"id":self._id,"d":data}
+                _length, _payload = packer.Pack_Str( json.dumps(data) )
 
+                try:
+                    # for python2
+                    data = [int(hex(ord(c)), 0) for c in _payload]
+                except:
+                    # for python3 
+                    data = [int(hex(c), 0) for c in _payload]
+
+                for i in range(3):
+                    if self.rx_done is True:
+                        self.rx_done = False
+                        break
+                    else:
+                        self.set_mode(MODE.SLEEP)
+                        self.set_dio_mapping([1,0,0,0,0,0])    # TX
+                        sleep(.5)
+                        lora.set_pa_config(pa_select=1)
+                        self.clear_irq_flags(TxDone=1)
+                        self.set_mode(MODE.STDBY)
+                        sleep(.5)
+                        print("Raw TX: {}".format(data))
+
+                        self.write_payload(data)
+                        self.set_mode(MODE.TX)
+
+                        ## ALOHA(1~3) ## on_tx_done
+                        t = i*i + int(np.random.random() * float(_length))
+                        print("ALOHA Waiting: {}".format( t))
+                        sleep(t)
+                        
     def on_rx_done(self):
         print("\nRxDone")
         print('----------------------------------')
@@ -70,25 +108,48 @@ class LoRaRcvCont(LoRa):
 
         try:
             _length, _data = packer.Unpack_Str(data)
-            print("Time: {}".format( str(time.ctime() )))
-            print("Length: {}".format( _length ))
-            print("Raw RX: {}".format( payload ))
+            if _data.split(',')[0].split(":")[1][2:-1] == self._id:hs
+              print("Time: {}".format( str(time.ctime() )))
+              print("Length: {}".format( _length ))
+              print("Raw RX: {}".format( payload ))
+              
+              self.set_dio_mapping([1,0,0,0,0,0])    # TX
+              self.set_mode(MODE.STDBY)
+              sleep(1)
+              self.clear_irq_flags(TxDone=1)
+              
+              forward_data(_data)
+              
+              self.set_dio_mapping([1,0,0,0,0,0])    # TX
+              self.set_mode(MODE.STDBY)
+              sleep(1)
+              self.clear_irq_flags(TxDone=1)
+              
+              data = {"id":self._id, "data":packer.ACK}
+              _length, _ack = packer.Pack_Str( json.dumps(data) )
 
-            t = str(time.strftime("%Y-%m-%dT%H:%M:%S"))
-            v = str(int(np.random.random() * 100))
-            if self.get_freq() == 928:
-                upload_data = [{"id":"final_002","value":[format( _data )], "time":t}]
-            else:
-                upload_data = [{"id":"final_001","value":[format( _data )], "time":t}]
-            print(upload_data)
-            client.publish(topic, "%s" % ( json.dumps(upload_data) ))
-
-            try:
+              try:
+                  # for python2
+                  ack = [int(hex(ord(c)), 0) for c in _ack]
+              except:
+                  # for python3 
+                  ack = [int(hex(c), 0) for c in _ack]
+      
+              print("ACK: {}, {}".format( self._id, ack))
+              self.write_payload(ack)    
+              self.set_mode(MODE.TX)
+              try:
                 # python3 unicode
                 print("Receive: {}".format( _data.encode('latin-1').decode('unicode_escape')))
-            except:
+              except:
                 # python2
                 print("Receive: {}".format( _data ))
+              
+              
+            else:
+              self.reset_ptr_rx()
+              self.set_mode(MODE.RXCONT)
+
         except:
             print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
             print("Non-hexadecimal digit found...")
@@ -96,10 +157,10 @@ class LoRaRcvCont(LoRa):
             print("Receive: {}".format( data))
 
 
-
+        """
         self.set_dio_mapping([1,0,0,0,0,0])    # TX
         self.set_mode(MODE.STDBY)
-  
+        
         sleep(1)
         self.clear_irq_flags(TxDone=1)
         data = {"id":self._id, "data":packer.ACK}
@@ -113,10 +174,9 @@ class LoRaRcvCont(LoRa):
             ack = [int(hex(c), 0) for c in _ack]
 
         print("ACK: {}, {}".format( self._id, ack))
-        self.write_payload(ack)    
+        self.write_payload(ack)
         self.set_mode(MODE.TX)
-
-
+        """
     def on_tx_done(self):
         print("\nTxDone")
         self.set_dio_mapping([0,0,0,0,0,0])    # RX
@@ -158,7 +218,7 @@ args = parser.parse_args(lora)
 lora.set_mode(MODE.STDBY)
 lora.set_pa_config(pa_select=1)
 lora.set_coding_rate(4)
-lora.set_freq(928)
+lora.set_freq(868)
 try:
     lora.start()
 except KeyboardInterrupt:
