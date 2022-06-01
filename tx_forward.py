@@ -113,13 +113,13 @@ class LoRaBeacon(LoRa):
                 BOARD.teardown()
                 exit()
             
-            
+            targetNode = input("Send to:")
             #number = None
             #number = str(readNumber())
 
             if len(rawinput) < 200:
-
-                data = {"id":self._id, "data":rawinput}
+                # t:target d:data
+                data = {"t":targetNode,"id":self._id,"d":rawinput}
                 _length, _payload = packer.Pack_Str( json.dumps(data) )
 
                 try:
