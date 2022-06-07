@@ -58,108 +58,53 @@ class LoRaRcvCont(LoRa):
         super(LoRaRcvCont, self).__init__(verbose)
         self.set_mode(MODE.SLEEP)
         self.set_dio_mapping([0,0,0,0,0,0])    # RX
-        self._id = "GW_01"
+        self._id = "GW_02"
+
 
     def on_rx_done(self):
         print("\nRxDone")
         print('----------------------------------')
-
+        
         payload = self.read_payload(nocheck=True)
         data = ''.join([chr(c) for c in payload])
 
         try:
             _length, _data = packer.Unpack_Str(data)
-            print("Error = 1")
-            # 判斷是否為自己的封包
+            print(_data.split(',')[0].split(":")[1][2:-1])
             if _data.split(',')[0].split(":")[1][2:-1] == self._id:
-              print("Time: {}".format( str(time.ctime() )))
+            
+              print("Time: {}".format( str(time.ctime() ))) 
               print("Length: {}".format( _length ))
               print("Raw RX: {}".format( payload ))
               
-              try:
-                # python3 unicode
-                print("Receive: {}".format( _data.encode('latin-1').decode('unicode_escape')))
-              except:
-                # python2
-                print("Receive: {}".format( _data ))
-              ####################################
-              # 封裝ACK並送回
-              # target = NODE_01
-              data = {"t": format( _data.split(',')[1].split(":")[1][2:-1] ),"id":self._id,"data":packer.ACK}
-              print(format( data ))
+              self.set_dio_mapping([1,0,0,0,0,0])    # TX
+              self.set_mode(MODE.STDBY)
+              
+              sleep(1)
+              self.clear_irq_flags(TxDone=1)
+              data = {"id":self._id, "data":packer.ACK}
               _length, _ack = packer.Pack_Str( json.dumps(data) )
-
-              ack = [int(hex(c), 0) for c in _ack]
-      
+              
+              try:
+                  # for python2
+                  ack = [int(hex(ord(c)), 0) for c in _ack]
+              except:
+                  # for python3 
+                  ack = [int(hex(c), 0) for c in _ack]
+              
               print("ACK: {}, {}".format( self._id, ack))
-              self.write_payload(ack)    
+              self.write_payload(ack)
               self.set_mode(MODE.TX)
-              ##################################
-              
-              
-              # 輸入下一個gateway(或RX)並送出
-              targetNode = input("Send to:")
-              data = _data.split('"')[-2]
-              
-              if len(data) < 200:
-                # t:target d:data
-                data = {"t":targetNode,"id":self._id,"d":data}
-                _length, _payload = packer.Pack_Str( json.dumps(data) )
-
-                try:
-                    # for python2
-                    data = [int(hex(ord(c)), 0) for c in _payload]
-                except:
-                    # for python3 
-                    data = [int(hex(c), 0) for c in _payload]
-
-                # set TX
-                self.rx_done = False
-                # forward data
-                for i in range(3):
-                    if self.rx_done is True:
-                        self.rx_done = False
-                        break
-                    else:
-                        self.set_mode(MODE.SLEEP)
-                        self.set_dio_mapping([1,0,0,0,0,0])    # TX
-                        sleep(.5)
-                        lora.set_pa_config(pa_select=1)
-                        self.clear_irq_flags(TxDone=1)
-                        self.set_mode(MODE.STDBY)
-                        sleep(.5)
-                        print("Raw TX: {}".format(data))
-
-                        self.write_payload(data)
-                        self.set_mode(MODE.TX)
-
-                        ## ALOHA(1~3) ## on_tx_done
-                        t = i*i + int(np.random.random() * float(_length))
-                        print("ALOHA Waiting: {}".format( t))
-                        sleep(t)
-                self.reset_ptr_rx()
-                self.set_mode(MODE.RXCONT)
-            else:
-                print("Error = 2")
-                print("\nTxDone")
-                self.set_dio_mapping([0,0,0,0,0,0])    # RX
-                self.set_mode(MODE.STDBY)
-                sleep(1)
-                self.reset_ptr_rx()
-                self.set_mode(MODE.RXCONT)
-                self.clear_irq_flags(RxDone=1)
 
         except:
             print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
             print("Non-hexadecimal digit found...")
             print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
             print("Receive: {}".format( data))
-
-
-        """
+        '''
         self.set_dio_mapping([1,0,0,0,0,0])    # TX
         self.set_mode(MODE.STDBY)
-        
+
         sleep(1)
         self.clear_irq_flags(TxDone=1)
         data = {"id":self._id, "data":packer.ACK}
@@ -175,7 +120,7 @@ class LoRaRcvCont(LoRa):
         print("ACK: {}, {}".format( self._id, ack))
         self.write_payload(ack)
         self.set_mode(MODE.TX)
-        """
+        '''
     def on_tx_done(self):
         print("\nTxDone")
         self.set_dio_mapping([0,0,0,0,0,0])    # RX
@@ -193,8 +138,8 @@ class LoRaRcvCont(LoRa):
             sleep(1)
             rssi_value = self.get_rssi_value()
             status = self.get_modem_status()
-            #sys.stdout.flush()
-            #sys.stdout.write("\r%d %d %d" % (rssi_value, status['rx_ongoing'], status['modem_clear']))
+            sys.stdout.flush()
+            sys.stdout.write("\r%d %d %d" % (rssi_value, status['rx_ongoing'], status['modem_clear']))
 
             """
             try:
