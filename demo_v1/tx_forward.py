@@ -114,12 +114,12 @@ class LoRaBeacon(LoRa):
                 exit()
             
             targetNode = input("Send to:")
-            #number = None
-            #number = str(readNumber())
+            number = None
+            number = str(readNumber())
 
-            if len(rawinput) < 200:
+            if len(number) < 200:
                 # t:target d:data
-                data = {"t":targetNode,"id":self._id,"d":rawinput}
+                data = {"t":targetNode,"id":self._id,"d":number}
                 _length, _payload = packer.Pack_Str( json.dumps(data) )
 
                 try:
@@ -156,6 +156,7 @@ lora = LoRaBeacon()
 lora.set_mode(MODE.STDBY)
 lora.set_pa_config(pa_select=1)
 lora.set_coding_rate(4)
+lora.set_freq(868)
 try:
     lora.start()
 except KeyboardInterrupt:
