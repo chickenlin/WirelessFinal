@@ -9,10 +9,12 @@
 
 ### 架構圖
 目前只有考慮 uplink 部分，uplink 通過兩種不同頻率將訊號傳送給兩個路徑不同的 Gateway，Gateway 再將訊號傳至 Ethernet。
+
 ![](https://i.imgur.com/wOfTD5s.png)
 
 ### 程式架構
 * uplink 程式碼部分請參考 [git](https://github.com/raspberrypi-tw/lora-sx1276/tree/master/04-gateway)。
+* 
 * tx_forward.py 是 UE 透過天線 uplink 到 gateway 的程式，流程圖如下。
 
 ![](https://i.imgur.com/dvcYkAv.png)
