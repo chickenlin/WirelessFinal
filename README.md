@@ -1,6 +1,8 @@
 # WirelessFinal
 110 Wireless Communication final project
+
 [注意事項]Version.2和3需要使用到Version.1中的packer(完整的指令教學我之後再補)
+
 [來源]這支程式碼是base[這支code](https://github.com/raspberrypi-tw/lora-sx1276/)
 
 ## Version.1
