@@ -14,7 +14,7 @@
 
 ### 程式架構
 * uplink 程式碼部分請參考 [git](https://github.com/raspberrypi-tw/lora-sx1276/tree/master/04-gateway)。
-* 
+
 * tx_forward.py 是 UE 透過天線 uplink 到 gateway 的程式，流程圖如下。
 
 ![](https://i.imgur.com/dvcYkAv.png)
